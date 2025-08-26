@@ -1,0 +1,8 @@
+[project]
+name = "led_effect_app"
+version = "0.1.0"
+dependencies = [
+  "flet==0.28.2",
+  "flet-desktop==0.28.2",
+  "flet-datatable2==0.1.0"
+]

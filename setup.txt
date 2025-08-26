@@ -1,0 +1,6 @@
+flet==0.28.2
+flet-datatable2==0.1.0
+flet-desktop==0.28.2
+python-osc==1.9.3
+pydantic==2.5.0
+colorama==0.4.6
