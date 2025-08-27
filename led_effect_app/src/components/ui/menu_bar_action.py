@@ -212,7 +212,13 @@ class MenuBarActionHandler:
         }
 
     def get_platform_info(self) -> str:
-        return self.current_platform
+        if self.current_platform == "Windows":
+            return "Windows"
+        elif self.current_platform == "Linux":
+            return "Linux"
+        elif self.current_platform == "Darwin":
+            return "macOS"
+        return "Unknown"
 
     def validate_file_operation(self, operation_type: str) -> bool:
         if operation_type == "save" and self.file_service:

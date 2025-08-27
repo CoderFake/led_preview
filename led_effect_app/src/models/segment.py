@@ -17,6 +17,9 @@ class Segment:
     is_edge_reflect: bool
     region_id: int
     dimmer_time: List[List[int]]
+    is_solo: bool = False
+    is_mute: bool = False
+    order_position: int = 0
     
     def __post_init__(self):
         """Validate and auto-fix segment data after initialization"""
@@ -36,7 +39,6 @@ class Segment:
             elif len(self.transparency) > target_size:
                 self.transparency = self.transparency[:target_size]
         
-        # Ensure length array size matches color/transparency count minus one
         expected_length_size = max(0, max(len(self.color), len(self.transparency)) - 1)
         if len(self.length) != expected_length_size:
             if len(self.length) < expected_length_size:
@@ -44,7 +46,6 @@ class Segment:
             elif len(self.length) > expected_length_size:
                 self.length = self.length[:expected_length_size]
 
-        # All length values must be positive
         self.length = [value if value > 0 else 10 for value in self.length]
             
     @classmethod
@@ -59,9 +60,12 @@ class Segment:
             move_range=data['move_range'],
             initial_position=data['initial_position'],
             current_position=data['current_position'],
-            is_edge_reflect=data['is_edge_reflect'],
+            is_edge_reflect=data.get('is_edge_reflect', True),
             region_id=data.get('region_id', 0),
-            dimmer_time=data['dimmer_time']
+            dimmer_time=data['dimmer_time'],
+            is_solo=data.get('is_solo', False),
+            is_mute=data.get('is_mute', False),
+            order_position=data.get('order_position', 0)
         )
         
     def to_dict(self) -> Dict[str, Any]:
@@ -77,7 +81,10 @@ class Segment:
             'current_position': self.current_position,
             'is_edge_reflect': self.is_edge_reflect,
             'region_id': self.region_id,
-            'dimmer_time': self.dimmer_time
+            'dimmer_time': self.dimmer_time,
+            'is_solo': self.is_solo,
+            'is_mute': self.is_mute,
+            'order_position': self.order_position
         }
         
     def get_color_count(self) -> int:

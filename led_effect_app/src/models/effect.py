@@ -17,7 +17,6 @@ class Effect:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Effect':
         """Create Effect from dictionary"""
-        from models.segment import Segment
         
         effect = cls(effect_id=data['effect_id'])
         

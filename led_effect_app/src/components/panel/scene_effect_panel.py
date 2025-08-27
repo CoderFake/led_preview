@@ -4,7 +4,7 @@ from ..effect import EffectComponent
 from ..color import ColorPaletteComponent
 from ..region import RegionComponent
 from .scene_effect_action import SceneEffectActionHandler
-
+from ..data.data_action_handler import DataActionHandler
 
 class SceneEffectPanel(ft.Container):
     """Left panel containing Scene/Effect controls"""
@@ -13,6 +13,7 @@ class SceneEffectPanel(ft.Container):
         super().__init__()
         self.page = page
         self.action_handler = SceneEffectActionHandler(page)
+        self.data_handler = DataActionHandler(page)
         self.expand = True
         self.content = self.build_content()
         
@@ -95,24 +96,23 @@ class SceneEffectPanel(ft.Container):
             ], spacing=10)
         ], spacing=0)
         
-    def _on_led_count_unfocus(self, e):
-        """Handle LED count unfocus - delegate to action handler"""
-        result = self.action_handler.handle_led_count_change(
-            e.control.value, 
-            self.fps_dropdown.value
-        )
-        if result:
-            self.scene_component.action_handler.create_scene_with_params(result, int(self.fps_dropdown.value))
-            
     def _on_fps_change(self, e):
-        """Handle FPS change - delegate to action handler"""
-        result = self.action_handler.handle_fps_change(
-            e.control.value, 
-            self.led_count_field.value
+        """Handle FPS change - delegate to data action handler"""
+        result = self.data_handler.handle_scene_settings_change(
+            led_count=self.led_count_field.value,
+            fps=e.control.value
         )
-        if result:
-            led_count = int(self.led_count_field.value) if self.led_count_field.value else 255
-            self.scene_component.action_handler.create_scene_with_params(led_count, result)
+        if not result:
+            self.data_handler.toast_manager.show_error_sync("Failed to update FPS")
+
+    def _on_led_count_unfocus(self, e):
+        """Handle LED count unfocus - delegate to data action handler"""
+        result = self.data_handler.handle_scene_settings_change(
+            led_count=e.control.value,
+            fps=self.fps_dropdown.value
+        )
+        if not result:
+            self.data_handler.toast_manager.show_error_sync("Failed to update LED count")
         
     def update_scenes_list(self, scenes_list):
         """Update scenes dropdown - delegate to action handler"""

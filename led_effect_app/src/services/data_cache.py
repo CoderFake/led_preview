@@ -181,6 +181,9 @@ class DataCacheService:
 
             segment_data['length'] = [val if val > 0 else 10 for val in segment_data['length']]
 
+            if 'is_edge_reflect' not in segment_data:
+                segment_data['is_edge_reflect'] = True
+
             if 'region_id' not in segment_data:
                 segment_data['region_id'] = 0
             
@@ -686,7 +689,7 @@ class DataCacheService:
                 elif param == "mute":
                     segment.is_mute = bool(value)
                 else:
-                    return False
+                    setattr(segment, param, value)
                     
                 self._notify_change()
                 return True
