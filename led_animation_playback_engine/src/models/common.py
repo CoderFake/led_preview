@@ -146,10 +146,10 @@ class DissolveTransition:
         self.calculator = calculator
         
     def start_dissolve(self, 
-                  old_pattern: PatternState,
-                  new_pattern: PatternState,
-                  pattern_data: List[List[int]],
-                  led_count: int):
+                      old_pattern: PatternState,
+                      new_pattern: PatternState,
+                      pattern_data: List[List[int]],
+                      led_count: int):
         """
         Start dual pattern dissolve transition with simultaneous crossfade
         
@@ -159,9 +159,11 @@ class DissolveTransition:
             pattern_data: Timing data [[delay_ms, duration_ms, start_led, end_led], ...]
             led_count: Number of LEDs
         """
-        from src.utils.color_utils import ColorUtils
-        
-        ColorUtils.set_dissolve_active(True)
+        logger.info("Starting dual pattern dissolve:")
+        logger.info(f"  Old pattern: Scene {old_pattern.scene_id}, Effect {old_pattern.effect_id}, Palette {old_pattern.palette_id}")
+        logger.info(f"  New pattern: Scene {new_pattern.scene_id}, Effect {new_pattern.effect_id}, Palette {new_pattern.palette_id}")
+        logger.info(f"  Pattern data: {len(pattern_data)} transitions")
+        logger.info(f"  LED count: {led_count}")
         
         with self._lock:
             if self.led_count != led_count:
@@ -179,21 +181,23 @@ class DissolveTransition:
             self.start_time = time.time()
             
             if not pattern_data:
+                logger.warning("Empty pattern data - transition will be instant")
                 self.phase = DissolvePhase.COMPLETED
                 self.is_active = False
-                ColorUtils.set_dissolve_active(False)
                 return
             
             valid_transitions = self._setup_crossfade_timing(pattern_data)
             
             if not valid_transitions:
+                logger.warning("No valid transitions - completing immediately")
                 self.phase = DissolvePhase.COMPLETED
                 self.is_active = False
-                ColorUtils.set_dissolve_active(False)
                 return
             
             self.phase = DissolvePhase.CROSSFADING
             self.is_active = True
+            
+            logger.info(f"Dual dissolve started: {len(valid_transitions)} valid transitions")
             
     def _setup_crossfade_timing(self, pattern_data: List[List[int]]) -> List[List[int]]:
         """
@@ -274,8 +278,6 @@ class DissolveTransition:
         Returns:
             Blended LED color array with dual pattern crossfade
         """
-        from src.utils.color_utils import ColorUtils
-        
         if not self.is_active or self.phase != DissolvePhase.CROSSFADING:
             if self.new_pattern and self.calculator:
                 return self.calculator.calculate_pattern_colors(
@@ -284,9 +286,9 @@ class DissolveTransition:
             return [[0, 0, 0] for _ in range(self.led_count)]
         
         if not self.calculator or not self.old_pattern or not self.new_pattern:
+            logger.error("Missing calculator or pattern states")
             self.phase = DissolvePhase.COMPLETED
             self.is_active = False
-            ColorUtils.set_dissolve_active(False)
             return [[0, 0, 0] for _ in range(self.led_count)]
         
         old_colors = self.calculator.calculate_pattern_colors(
@@ -347,6 +349,6 @@ class DissolveTransition:
         if total_with_timing > 0 and completed_count >= total_with_timing:
             self.phase = DissolvePhase.COMPLETED
             self.is_active = False
-            ColorUtils.set_dissolve_active(False)
+            logger.info(f"Dual dissolve completed: {completed_count}/{total_with_timing} LEDs finished")
         
         return result_array

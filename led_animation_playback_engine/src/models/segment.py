@@ -136,7 +136,7 @@ class Segment:
         return max(0.0, min(1.0, last_step[2] / 100.0))
     
     def update_position(self, delta_time: float):
-        """Update position with enhanced boundary enforcement and pause handling"""
+        """Update position with boundary enforcement and pause handling"""
         if self.is_paused or abs(self.move_speed) < 0.001:
             return
         
@@ -261,7 +261,7 @@ class Segment:
             return []
 
     def render_to_led_array(self, palette, current_time: float, led_array) -> None:
-        """Render segment to LED array with direct assignment when no dissolve"""
+        """Render segment to LED array with integer positioning"""
         segment_colors = self.get_led_colors_with_timing(palette, current_time)
         
         if not segment_colors:
@@ -285,7 +285,8 @@ class Segment:
                     
                     if 0 <= final_led_index < len(led_array):
                         validated_color = ColorUtils.validate_rgb_color(segment_colors[led_index])
-                        ColorUtils.add_colors_to_led_array(led_array, final_led_index, validated_color)
+                        segment_transparency = self.get_transparency_for_led_index(led_index)
+                        ColorUtils.add_segment_layer(final_led_index, validated_color, self.segment_id, segment_transparency)
                 return
             
             max_allowed_position = self.move_range[1] - len(segment_colors) + 1 if len(self.move_range) >= 2 else len(led_array) - len(segment_colors)
@@ -304,7 +305,8 @@ class Segment:
                 
                 if 0 <= final_led_index < len(led_array):
                     validated_color = ColorUtils.validate_rgb_color(segment_colors[led_index])
-                    ColorUtils.add_colors_to_led_array(led_array, final_led_index, validated_color)
+                    segment_transparency = self.get_transparency_for_led_index(led_index)
+                    ColorUtils.add_segment_layer(final_led_index, validated_color, self.segment_id, segment_transparency)
                     
         except Exception:
             pass
@@ -411,7 +413,7 @@ class Segment:
             return False
     
     def validate(self) -> bool:
-        """Enhanced validation using centralized validation utilities"""
+        """Validation using centralized validation utilities"""
         try:
             if not ValidationUtils.validate_int(self.segment_id, 0, ValidationUtils.MAX_SEGMENT_ID):
                 log_validation_error(f"Invalid segment_id: {self.segment_id}", "segment_id")

@@ -42,7 +42,9 @@ class Effect:
         for led in led_array:
             led[0] = led[1] = led[2] = 0
         
-        for segment in self.segments.values():
+        sorted_segments = sorted(self.segments.values(), key=lambda seg: seg.segment_id)
+        
+        for segment in sorted_segments:
             segment.render_to_led_array(palette, current_time, led_array)
         
         ColorUtils.finalize_frame_blending(led_array)
