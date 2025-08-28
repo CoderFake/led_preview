@@ -14,10 +14,9 @@ class ColorPaletteComponent(ft.Container):
         self.page = page
         self.action_handler = ColorPaletteActionHandler(page)
         self.current_editing_slot = None
-        
+
         self.content = self.build_content()
-        color_service.add_color_change_listener(self._on_palette_changed)
-        
+
         self.page.on_resize = self._on_page_resize
         
     def build_content(self):

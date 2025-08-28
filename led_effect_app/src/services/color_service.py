@@ -10,6 +10,7 @@ class ColorService:
     def __init__(self):
         self.current_palette: Optional[ColorPalette] = None
         self.color_change_callbacks: List[Callable] = []
+        self.palette_change_callbacks: List[Callable] = []
         self.current_segment_id: Optional[str] = None
         
         self._initialize_default_palette()
@@ -46,7 +47,7 @@ class ColorService:
     def set_current_palette(self, palette: ColorPalette):
         """Set the current active palette"""
         self.current_palette = palette
-        self._notify_color_change()
+        self._notify_palette_change()
         
     def update_palette_color(self, slot_index: int, color: str):
         """Update a specific color slot in the current palette"""
@@ -54,7 +55,7 @@ class ColorService:
             old_color = self.current_palette.colors[slot_index]
             self.current_palette.colors[slot_index] = color
             AppLogger.info(f"Color slot {slot_index} updated: {old_color} -> {color}")
-            self._notify_color_change()
+            self._notify_palette_change()
             
     def get_palette_colors(self) -> List[str]:
         """Get all colors from current palette (6 colors)"""
@@ -195,15 +196,15 @@ class ColorService:
                 
         except Exception as e:
             AppLogger.error(f"Error updating segment length: {e}")
-            
+
         return False
-        
+
     def sync_with_cache_palette(self):
         """Sync current palette with cache data"""
         try:
             colors = data_cache.get_current_palette_colors()
             palette_id = data_cache.current_palette_id or 0
-            
+
             if colors:
                 self.current_palette = ColorPalette(
                     id=palette_id,
@@ -211,24 +212,37 @@ class ColorService:
                     colors=colors
                 )
                 AppLogger.info(f"Color service synced with cache palette {palette_id}")
-                self._notify_color_change()
-                
+                self._notify_palette_change()
+
         except Exception as e:
             AppLogger.error(f"Error syncing with cache palette: {e}")
-        
+
     def add_color_change_listener(self, callback: Callable):
-        """Add listener for color changes"""
+        """Add listener for segment color composition changes"""
         if callback not in self.color_change_callbacks:
             self.color_change_callbacks.append(callback)
-            
+
     def remove_color_change_listener(self, callback: Callable):
-        """Remove color change listener"""
+        """Remove segment color composition listener"""
         if callback in self.color_change_callbacks:
             self.color_change_callbacks.remove(callback)
             AppLogger.info(f"Color change listener removed (total: {len(self.color_change_callbacks)})")
-            
+
+    def add_palette_change_listener(self, callback: Callable):
+        """Add listener for palette changes"""
+        if callback not in self.palette_change_callbacks:
+            self.palette_change_callbacks.append(callback)
+
+    def remove_palette_change_listener(self, callback: Callable):
+        """Remove palette change listener"""
+        if callback in self.palette_change_callbacks:
+            self.palette_change_callbacks.remove(callback)
+            AppLogger.info(
+                f"Palette change listener removed (total: {len(self.palette_change_callbacks)})"
+            )
+
     def _notify_color_change(self):
-        """Notify all listeners about color changes"""
+        """Notify listeners about segment color composition changes"""
         for callback in self.color_change_callbacks[:]:
             try:
                 if callable(callback):
@@ -239,6 +253,19 @@ class ColorService:
                 AppLogger.error(f"Error in color change callback: {e}")
                 if callback in self.color_change_callbacks:
                     self.color_change_callbacks.remove(callback)
+
+    def _notify_palette_change(self):
+        """Notify listeners about palette changes"""
+        for callback in self.palette_change_callbacks[:]:
+            try:
+                if callable(callback):
+                    callback()
+                else:
+                    self.palette_change_callbacks.remove(callback)
+            except Exception as e:
+                AppLogger.error(f"Error in palette change callback: {e}")
+                if callback in self.palette_change_callbacks:
+                    self.palette_change_callbacks.remove(callback)
 
 
 color_service = ColorService()
