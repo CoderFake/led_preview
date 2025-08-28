@@ -2,6 +2,8 @@ import flet as ft
 from ..ui.toast import ToastManager
 from services.data_cache import data_cache
 from services.color_service import color_service
+from src.components.segment.segment_popup_dialog import SegmentPopupDialog
+from utils.logger import AppLogger
 
 
 class SegmentActionHandler:
@@ -11,8 +13,16 @@ class SegmentActionHandler:
         self.page = page
         self.segment_component = segment_component
         self.toast_manager = ToastManager(page)
+        self.popup_dialog = None
+        self._setup_popup_dialog()
 
-    # ---------- helpers ----------
+    def _setup_popup_dialog(self):
+        """Initialize the popup dialog for segment creation"""
+        self.popup_dialog = SegmentPopupDialog(
+            page=self.page,
+            on_create_callback=self._handle_segment_creation
+        )
+
     def _get_current_segment_id(self) -> int | None:
         try:
             if self.segment_component is not None and hasattr(self.segment_component, "segment_dropdown"):
@@ -44,18 +54,26 @@ class SegmentActionHandler:
                 self.segment_component.segment_dropdown.update()
             self.segment_component.refresh_segment_state_ui()
 
-    # ---------- actions ----------
     def add_segment(self, e):
+        """Show popup dialog for segment creation"""
+        if self.popup_dialog:
+            self.popup_dialog.show()
+        else:
+            self.toast_manager.show_error_sync("Popup dialog not initialized")
+
+    def _handle_segment_creation(self, segment_id: int):
+        """Handle segment creation from popup dialog"""
         try:
-            new_id = data_cache.create_new_segment()
+            new_id = data_cache.create_new_segment(custom_id=segment_id)
             if new_id is not None:
                 color_service.set_current_segment_id(str(new_id))
                 self._refresh_after_create(new_id)
-                self.toast_manager.show_success_sync(f"Segment {new_id} created successfully")
+                self.toast_manager.show_success_sync(f"Segment {segment_id} created successfully")
             else:
-                self.toast_manager.show_error_sync("Failed to create segment")
+                self.toast_manager.show_error_sync(f"Failed to create segment {segment_id}")
         except Exception as ex:
-            self.toast_manager.show_error_sync(f"Failed to create segment: {str(ex)}")
+            self.toast_manager.show_error_sync(f"Error creating segment: {str(ex)}")
+            AppLogger.error(f"Error creating segment {segment_id}: {ex}")
 
     def delete_segment(self, e):
         current_id = self._get_current_segment_id()
@@ -237,7 +255,6 @@ class SegmentActionHandler:
                 self.toast_manager.show_warning_sync("Segment already at bottom of render order")
                 return False
 
-            # TODO: send OSC to engine
             ok = True
             if ok:
                 current_seg.render_order = new_idx
