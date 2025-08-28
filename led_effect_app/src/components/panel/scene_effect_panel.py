@@ -5,6 +5,7 @@ from ..color import ColorPaletteComponent
 from ..region import RegionComponent
 from .scene_effect_action import SceneEffectActionHandler
 from ..data.data_action_handler import DataActionHandler
+from services.color_service import color_service
 
 class SceneEffectPanel(ft.Container):
     """Left panel containing Scene/Effect controls"""
@@ -24,6 +25,7 @@ class SceneEffectPanel(ft.Container):
         scene_settings_section = self._build_scene_settings_section()
 
         self.color_palette = ColorPaletteComponent(self.page)
+        color_service.add_palette_change_listener(self.color_palette._on_palette_changed)
         self.region_settings = RegionComponent(self.page)
         
         return ft.Column([
